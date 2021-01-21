@@ -763,7 +763,7 @@ common_articles = user_item_train.columns.isin(test_arts)
 print('We can make prediction for {} articles.'.format(common_articles.sum()))
 
 # number of articles we cannot make predictions for
-n_no_articles = len(test_arts) - len(n_articles)
+n_no_articles = len(test_arts) - common_articles.sum()
 # Replace the values in the dictionary below
 a = 662
 b = 574
@@ -870,4 +870,3 @@ plt.show()
 
 from subprocess import call
 call(['python', '-m', 'nbconvert', 'Recommendations_with_IBM.ipynb'])
-
