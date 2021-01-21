@@ -468,26 +468,23 @@ def get_top_sorted_users(user_id, df=df, user_item=user_item):
                     highest of each is higher in the dataframe
 
     '''
-    # Your code here
-    num_interactions = list(user_item.sum(axis=1))
-    num_interactions.remove(user_id)
+    num_interactions = list(user_item.drop(index=user_id).sum(axis=1))
     similar_users = find_similar_users(user_id)
     user = user_item.loc[user_item.index==user_id]
     dot = user_item.dot(user.T)
     dot.columns = ['similarity']
+    dot.drop(index=user_id, inplace=True)
     similarity = list(dot['similarity'])
-    similarity.remove(user_id)
     neighbors_df = pd.DataFrame({'neighbor_id': similar_users,
                                 'similarity': similarity,
                                 'num_interactions': num_interactions})
 
     neighbors_df.sort_values(['similarity', 'num_interactions'], inplace=True,
                             ascending=False)
-    neighbors_df
     return neighbors_df # Return the dataframe specified in the doc_string
 
 
-def user_user_recs_part2(user_id, m=10):
+def user_user_recs_part2(user_id, m=10, df=df):
     '''
     INPUT:
     user_id - (int) a user id
@@ -518,16 +515,36 @@ def user_user_recs_part2(user_id, m=10):
         seen_movies = get_user_articles(sim_user_id)[0]
         cur_recs = set(seen_movies) - set(user_article_id)
         if (len(recs) + len(cur_recs)) > m:
-            recs = add_ordered(recs, cur_recs)
+            print('add ordered')
+            recs = add_ordered(recs, cur_recs, m)
             break
         else:
             recs = recs | cur_recs
+
     rec_names = get_article_names(list(recs))
+    len(rec_names)
     return recs, rec_names
 
 
-def add_ordered(recs, cur_recs):
-    return recs | cur_recs
+
+def add_ordered(recs, cur_recs, m, df=df):
+    print(len(recs))
+    cur_recs = list(cur_recs)
+    recs = list(recs)
+    top_articles = get_top_article_ids(df.shape[0])
+    top_articles = [str(x) for x in top_articles]
+    index_list = [top_articles.index(x) for x in cur_recs]
+    sorted_articles = [x for _, x in sorted(zip(index_list, cur_recs))]
+    sorted_articles
+    for rec in sorted_articles:
+        recs.append(rec)
+        print(len(recs))
+        if len(recs) == m:
+            print('return')
+            break
+    return set(recs)
+
+
 
 
 
@@ -554,22 +571,21 @@ print(rec_names)
 
 # Tests with a dictionary of results
 
-user1_most_sim = # Find the user that is most similar to user 1
-user131_10th_sim = # Find the 10th most similar user to user 131
+user1_most_sim = find_similar_users(1)# Find the user that is most similar to user 1
+user131_10th_sim = find_similar_users(131) # Find the 10th most similar user to user 131
 
 
 # In[ ]:
 
-
+# user131_10th_sim = [str(x) for x in user131_10th_sim]
+# user1_most_sim = [str(x) for x in user1_most_sim]
 # Dictionary Test Here
 sol_5_dict = {
-    'The user that is most similar to user 1.': user1_most_sim,
-    'The user that is the 10th most similar to user 131': user131_10th_sim,
+    'The user that is most similar to user 1.': user1_most_sim[0],
+    'The user that is the 10th most similar to user 131': user131_10th_sim[10],
 }
 
 t.sol_5_test(sol_5_dict)
-
-
 # `6.` If we were given a new user, which of the above functions would you be able to use to make recommendations?  Explain.  Can you think of a better way we might make recommendations?  Use the cell below to explain a better method for new users.
 
 # **Provide your response here.**
