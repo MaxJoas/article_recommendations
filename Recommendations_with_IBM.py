@@ -759,8 +759,8 @@ n_no_predictions = len(test_idx) - n_predictions
 print('There are {} we cannot make predictions for'.format(n_no_predictions))
 
 # number of articles we can predict
-n_articles = user_item_train.columns.isin(test_arts).sum()
-print('We can make prediction for {} articles.'.format(n_articles))
+common_articles = user_item_train.columns.isin(test_arts)
+print('We can make prediction for {} articles.'.format(common_articles.sum()))
 
 # number of articles we cannot make predictions for
 n_no_articles = len(test_arts) - len(n_articles)
@@ -770,7 +770,6 @@ b = 574
 c = 20
 d = 0
 
-test_idx
 sol_4_dict = {
     'How many users can we make predictions for in the test set?': c,
     'How many users in the test set are we not able to make predictions for because of the cold start problem?': a,
@@ -789,14 +788,45 @@ t.sol_4_test(sol_4_dict)
 
 
 # fit SVD on the user_item_train matrix
-u_train, s_train, vt_train = # fit svd similar to above then use the cells below
+u_train, s_train, vt_train = np.linalg.svd(user_item_train) # fit svd similar to above then use the cells below
+predictable_user_helper = user_item_train.index.isin(test_idx)
+predictable_users = user_item_train.index[predictable_user_helper]
+predictable_users_check = user_item_test.index.isin(predictable_users)
+predictable_users_test = user_item_test.index[predictable_users_check]
+all(predictable_users_test == predictable_users)
 
-
+u_test = u_train[predictable_user_helper, :]
+vt_test = vt_train[:, common_articles]
 # In[ ]:
 
 
 # Use these cells to see how well you can use the training
 # decomposition to predict on test data
+
+num_latent_feats = np.arange(10,700+10,20)
+sum_errs = []
+
+for k in num_latent_feats:
+    # restructure with k latent features
+    s_new, u_new, vt_new = np.diag(s_train[:k]), u_train[:, :k], vt_train[:k, :]
+    u_test_new, vt_test_new = u_test[:, :k], vt_test[:k, :]
+    # take dot product
+    user_item_est = np.around(np.dot(np.dot(u_test_new, s_new), vt_test_new))
+    # compute error for each prediction to actual value
+    diffs = np.subtract(user_item_test.loc[predictable_users], user_item_est)
+    # total errors and keep track of them
+    err = np.sum(np.sum(np.abs(diffs)))
+    sum_errs.append(err)
+    user_item_est.shape
+    user_item_test.loc[predictable_users].shape
+
+
+plt.plot(num_latent_feats, 1 - np.array(sum_errs)/df.shape[0]);
+plt.xlabel('Number of Latent Features');
+plt.ylabel('Accuracy');
+plt.title('Accuracy vs. Number of Latent Features');
+plt.show()
+
 
 
 # In[ ]:
